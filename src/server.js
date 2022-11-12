@@ -1,66 +1,39 @@
-const http = require('http')
+const express = require('express')
+const app = express()
+const mongoose = require('mongoose')
+const connectDB = require('./dbConnection')
+const bodyParser = require('body-parser')
+require('dotenv/config')
+const cors = require('cors')
 
-const {
-  getUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
-} = require('./controllers/usersController')
+app.use(bodyParser())
+app.use(cors())
 
-const {
-  getBooks,
-  getBookById,
-  createBook,
-  updateBook,
-  deleteBook,
-} = require('./controllers/booksController')
+connectDB()
 
-const PORT = process.env.PORT || 3000
+const usersRoute = require('./routes/userRoutes')
+const booksRoute = require('./routes/bookRoutes')
 
-const server = http.createServer((req, res) => {
-  if ((req.url === '/users' || req.url === '/users/') && req.method === 'GET') {
-    getUsers(req, res)
-  } else if (req.url === '/users' && req.method === 'POST') {
-    createUser(req, res)
-  } else if (req.url.match(/\/users\/([0-9]+)/) && req.method === 'GET') {
-    const id = req.url.split('/')[2]
-    getUserById(req, res, id)
-  } else if (req.url.match(/\/users\/([0-9]+)/) && req.method === 'PUT') {
-    const id = req.url.split('/')[2]
-    updateUser(req, res, id)
-  } else if (req.url.match(/\/users\/([0-9]+)/) && req.method === 'DELETE') {
-    const id = req.url.split('/')[2]
-    deleteUser(req, res, id)
-  } else if (
-    (req.url === '/books' || req.url === '/books/') &&
-    req.method === 'GET'
-  ) {
-    getBooks(req, res)
-  } else if (req.url === '/books' && req.method === 'POST') {
-    createBook(req, res)
-  } else if (req.url.match(/\/books\/([0-9]+)/) && req.method === 'GET') {
-    const bookId = req.url.split('/')[2]
-    getBookById(req, res, bookId)
-  } else if (req.url.match(/\/books\/([0-9]+)/) && req.method === 'PUT') {
-    const id = req.url.split('/')[2]
-    updateBook(req, res, id)
-  } else if (req.url.match(/\/books\/([0-9]+)/) && req.method === 'DELETE') {
-    const id = req.url.split('/')[2]
-    deleteBook(req, res, id)
-  } else {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain',
-    })
-    res.write('Welcome to the library')
-    res.end()
-  }
+app.use('/users', usersRoute)
+app.use('/books', booksRoute)
+
+app.get('/', (req, res) => {
+  res.send('Welcome to the library')
+  res.status(200)
 })
 
-server.listen(PORT, () => {
-  try {
-    console.log('Server is running')
-  } catch (err) {
-    console.log(err)
-  }
+app.get('/*', (req, res) => {
+  res.send('Page not found')
+  res.status(404)
+})
+
+mongoose.connection.once('open', () => {
+  console.log('Connected to MongoDB')
+  app.listen(process.env.PORT, () => {
+    try {
+      console.log(`Server link: ${process.env.API_URL}:${process.env.PORT}`)
+    } catch (err) {
+      console.log(err)
+    }
+  })
 })
